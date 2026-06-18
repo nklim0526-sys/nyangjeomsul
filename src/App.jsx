@@ -1,122 +1,103 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import StarField from './components/StarField'
+import BlackCat from './components/BlackCat'
+import Step1_BirthInfo from './components/Step1_BirthInfo'
+import Step2_State from './components/Step2_State'
+import Step3_Response from './components/Step3_Response'
+import { computeSaju } from './lib/saju'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [step, setStep] = useState(1)
+  const [saju, setSaju] = useState(null)
+  const [stateData, setStateData] = useState(null)
+  const [catState, setCatState] = useState('idle')
+  const [sajuError, setSajuError] = useState(null)
+
+  const handleBirthSubmit = ({ year, month, day, sijin }) => {
+    try {
+      const result = computeSaju(year, month, day, sijin)
+      setSaju(result)
+      setSajuError(null)
+      setStep(2)
+    } catch (e) {
+      setSajuError(e.message)
+    }
+  }
+
+  const handleStateSubmit = (data) => {
+    setStateData(data)
+    setCatState('thinking')
+    setStep(3)
+  }
+
+  const handleRetry = () => {
+    setCatState('idle')
+    setStep(2)
+  }
+
+  const handleDone = () => {
+    setCatState('done')
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="min-h-screen bg-[#080818] relative overflow-x-hidden">
+      <StarField />
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md mx-auto px-4 py-10">
+        {/* Header */}
+        <div className="text-center mb-1">
+          <h1 className="font-serif text-2xl text-purple-300 tracking-[0.2em]">냥점술</h1>
+          <p className="text-purple-500/50 text-xs mt-1 tracking-widest">검정 고양이의 신비로운 사주 풀이</p>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        {/* Cat */}
+        <div className="my-4">
+          <BlackCat state={catState} />
+          {catState === 'thinking' && (
+            <p className="text-center text-purple-400/60 text-xs mt-1 animate-pulse font-serif">
+              생각 중...
+            </p>
+          )}
+        </div>
+
+        {/* Saju error */}
+        {sajuError && (
+          <div className="w-full mb-3 bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-2.5 text-red-400 text-xs text-center">
+            사주 계산 중 오류가 생겼어. 생년월일을 다시 확인해줘.
+          </div>
+        )}
+
+        {/* Steps */}
+        {step === 1 && <Step1_BirthInfo onSubmit={handleBirthSubmit} />}
+
+        {step === 2 && (
+          <Step2_State
+            onSubmit={handleStateSubmit}
+            onBack={() => setStep(1)}
+          />
+        )}
+
+        {step === 3 && saju && stateData && (
+          <Step3_Response
+            saju={saju}
+            stateData={stateData}
+            onDone={handleDone}
+            onRetry={handleRetry}
+          />
+        )}
+
+        {/* Step indicator */}
+        <div className="flex gap-2 mt-6">
+          {[1, 2, 3].map((s) => (
+            <div
+              key={s}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                s === step ? 'bg-purple-400 w-4' : s < step ? 'bg-purple-600 w-1.5' : 'bg-purple-900 w-1.5'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
-
-export default App
