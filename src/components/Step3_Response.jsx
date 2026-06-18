@@ -31,7 +31,7 @@ export default function Step3_Response({ saju, stateData, onDone, onRetry }) {
       <div className="w-full mt-3 animate-fadeIn">
         <div className="bg-[#1a1a2e]/70 border border-red-500/30 rounded-2xl p-6 text-center space-y-3">
           <p className="text-red-400 text-sm">고양이가 잠시 자리를 비웠어...</p>
-          <p className="text-gray-600 text-xs">{error}</p>
+          <p className="text-red-300/70 text-xs break-all">{error}</p>
           <button onClick={onRetry} className="btn-secondary">다시 물어보기</button>
         </div>
       </div>

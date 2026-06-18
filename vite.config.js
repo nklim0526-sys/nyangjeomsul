@@ -6,4 +6,16 @@ export default defineConfig({
   optimizeDeps: {
     include: ['manseryeok'],
   },
+  server: {
+    proxy: {
+      '/anthropic': {
+        target: 'https://api.anthropic.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/anthropic/, ''),
+        configure: (proxy) => {
+          proxy.on('error', (err) => console.error('[proxy error]', err))
+        },
+      },
+    },
+  },
 })
