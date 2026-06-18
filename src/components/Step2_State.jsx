@@ -25,8 +25,6 @@ export default function Step2_State({ onSubmit, onBack }) {
   const [energy, setEnergy] = useState(5)
   const [emotion, setEmotion] = useState(5)
   const [pressure, setPressure] = useState(5)
-  const [age, setAge] = useState('')
-  const [situation, setSituation] = useState('')
 
   const canSubmit = worry.trim().length > 0
 
@@ -50,32 +48,12 @@ export default function Step2_State({ onSubmit, onBack }) {
           <Slider value={pressure} onChange={setPressure} leftLabel="여유로움 ☁️" rightLabel="터질 것 같음 🔥" />
         </div>
 
-        {/* Optional fields */}
-        <div className="flex gap-2">
-          <input
-            type="number"
-            value={age}
-            onChange={(e) => setAge(e.target.value)}
-            placeholder="나이 (선택)"
-            min={1}
-            max={120}
-            className="input-style w-28 shrink-0"
-          />
-          <input
-            type="text"
-            value={situation}
-            onChange={(e) => setSituation(e.target.value)}
-            placeholder="현재 상황 한 줄 (선택)"
-            className="input-style flex-1 min-w-0"
-          />
-        </div>
-
         <div className="flex gap-2">
           <button onClick={onBack} className="btn-secondary flex-shrink-0 px-4">
             ←
           </button>
           <button
-            onClick={() => onSubmit({ worry, energy, emotion, pressure, age: age ? Number(age) : null, situation })}
+            onClick={() => onSubmit({ worry, energy, emotion, pressure })}
             disabled={!canSubmit}
             className="btn-primary flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
           >
