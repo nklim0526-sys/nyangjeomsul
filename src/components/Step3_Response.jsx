@@ -1,48 +1,34 @@
-import { useEffect, useState, useRef } from 'react'
-import { streamCatReading } from '../lib/api'
+import { useState, useRef, useEffect } from 'react'
 
-export default function Step3_Response({ saju, stateData, onDone, onRetry }) {
-  const [text, setText] = useState('')
-  const [streaming, setStreaming] = useState(true)
-  const [error, setError] = useState(null)
-  const calledRef = useRef(false)
+export default function Step3_Response({ currentText, isStreaming, streamError, onFollowUp, onStartOver }) {
+  const [followUp, setFollowUp] = useState('')
+  const textareaRef = useRef(null)
 
-  useEffect(() => {
-    if (calledRef.current) return
-    calledRef.current = true
-
-    streamCatReading({
-      saju,
-      state: stateData,
-      onToken: (token) => setText((prev) => prev + token),
-      onDone: () => {
-        setStreaming(false)
-        onDone()
-      },
-      onError: (err) => {
-        setError(err.message)
-        setStreaming(false)
-      },
-    })
-  }, [])
-
-  if (error) {
-    return (
-      <div className="w-full mt-3 animate-fadeIn">
-        <div className="bg-[#1a1a2e]/70 border border-red-500/30 rounded-2xl p-6 text-center space-y-3">
-          <p className="text-red-400 text-sm">고양이가 잠시 자리를 비웠어...</p>
-          <p className="text-red-300/70 text-xs break-all">{error}</p>
-          <button onClick={onRetry} className="btn-secondary">다시 물어보기</button>
-        </div>
-      </div>
-    )
+  const handleSend = () => {
+    const trimmed = followUp.trim()
+    if (!trimmed || isStreaming) return
+    setFollowUp('')
+    onFollowUp(trimmed)
   }
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  useEffect(() => {
+    if (!isStreaming && textareaRef.current) {
+      textareaRef.current.focus()
+    }
+  }, [isStreaming])
+
   return (
-    <div className="w-full mt-3 animate-fadeIn">
+    <div className="w-full mt-3 space-y-3 animate-fadeIn">
       {/* Speech bubble */}
       <div className="relative bg-[#1a1a2e] border border-purple-500/30 rounded-2xl p-6 bubble-tail">
-        {streaming && !text && (
+        {isStreaming && !currentText && (
           <div className="flex gap-1.5 items-center py-1">
             <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
             <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -50,24 +36,58 @@ export default function Step3_Response({ saju, stateData, onDone, onRetry }) {
           </div>
         )}
 
-        {text && (
+        {streamError && (
+          <div className="space-y-1">
+            <p className="text-red-400 text-sm">고양이가 잠시 자리를 비웠어...</p>
+            <p className="text-red-300/70 text-xs break-all">{streamError}</p>
+          </div>
+        )}
+
+        {currentText && (
           <p className="font-serif text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
-            {text}
-            {streaming && (
+            {currentText}
+            {isStreaming && (
               <span className="inline-block w-0.5 h-4 bg-purple-400 ml-0.5 animate-cursor align-middle" />
             )}
           </p>
         )}
       </div>
 
-      {/* Retry button */}
-      {!streaming && (
-        <div className="mt-4 space-y-2 animate-fadeIn">
-          <button onClick={onRetry} className="btn-secondary w-full">
-            다시 물어보기
-          </button>
-          <p className="text-center text-gray-600 text-xs">새로운 고민을 입력하거나 다시 물어볼 수 있어</p>
+      {/* Follow-up input */}
+      {!streamError && (
+        <div className="bg-[#1a1a2e]/60 border border-purple-500/20 rounded-2xl p-4 space-y-3">
+          <textarea
+            ref={textareaRef}
+            value={followUp}
+            onChange={(e) => setFollowUp(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isStreaming}
+            placeholder={isStreaming ? '고양이가 생각하는 중...' : '이어서 물어봐... (Enter로 전송)'}
+            className="w-full bg-[#0d0d1f] border border-purple-500/20 rounded-xl p-3 text-gray-200 text-sm resize-none h-16 focus:outline-none focus:border-purple-400/50 placeholder:text-gray-600 transition-colors disabled:opacity-40"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleSend}
+              disabled={!followUp.trim() || isStreaming}
+              className="btn-primary flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              보내기
+            </button>
+            <button
+              onClick={onStartOver}
+              disabled={isStreaming}
+              className="btn-secondary px-4 disabled:opacity-40"
+            >
+              처음부터
+            </button>
+          </div>
         </div>
+      )}
+
+      {streamError && (
+        <button onClick={onStartOver} className="btn-secondary w-full">
+          처음부터
+        </button>
       )}
     </div>
   )

@@ -1,17 +1,51 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import StarField from './components/StarField'
 import BlackCat from './components/BlackCat'
 import Step1_BirthInfo from './components/Step1_BirthInfo'
 import Step2_State from './components/Step2_State'
 import Step3_Response from './components/Step3_Response'
 import { computeSaju } from './lib/saju'
+import { streamCatReading, buildFirstMessage } from './lib/api'
 
 export default function App() {
   const [step, setStep] = useState(1)
   const [saju, setSaju] = useState(null)
-  const [stateData, setStateData] = useState(null)
-  const [catState, setCatState] = useState('idle')
   const [sajuError, setSajuError] = useState(null)
+  const [catState, setCatState] = useState('idle')
+
+  // 대화 히스토리
+  const [messages, setMessages] = useState([])
+  const [currentText, setCurrentText] = useState('')
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [streamError, setStreamError] = useState(null)
+  const accRef = useRef('')
+
+  const callCat = (msgs) => {
+    accRef.current = ''
+    setCurrentText('')
+    setStreamError(null)
+    setIsStreaming(true)
+    setCatState('thinking')
+
+    streamCatReading({
+      messages: msgs,
+      onToken: (token) => {
+        accRef.current += token
+        setCurrentText((prev) => prev + token)
+      },
+      onDone: () => {
+        const finalText = accRef.current
+        setMessages([...msgs, { role: 'assistant', content: finalText }])
+        setIsStreaming(false)
+        setCatState('done')
+      },
+      onError: (err) => {
+        setStreamError(err.message)
+        setIsStreaming(false)
+        setCatState('idle')
+      },
+    })
+  }
 
   const handleBirthSubmit = ({ year, month, day, sijin }) => {
     try {
@@ -24,19 +58,26 @@ export default function App() {
     }
   }
 
-  const handleStateSubmit = (data) => {
-    setStateData(data)
-    setCatState('thinking')
+  const handleStateSubmit = (state) => {
+    const firstMsg = { role: 'user', content: buildFirstMessage(saju, state) }
+    setMessages([firstMsg])
     setStep(3)
+    callCat([firstMsg])
   }
 
-  const handleRetry = () => {
+  const handleFollowUp = (text) => {
+    const newMsg = { role: 'user', content: text }
+    const newMessages = [...messages, newMsg]
+    setMessages(newMessages)
+    callCat(newMessages)
+  }
+
+  const handleStartOver = () => {
+    setMessages([])
+    setCurrentText('')
+    setStreamError(null)
     setCatState('idle')
-    setStep(2)
-  }
-
-  const handleDone = () => {
-    setCatState('done')
+    setStep(1)
   }
 
   return (
@@ -77,12 +118,13 @@ export default function App() {
           />
         )}
 
-        {step === 3 && saju && stateData && (
+        {step === 3 && (
           <Step3_Response
-            saju={saju}
-            stateData={stateData}
-            onDone={handleDone}
-            onRetry={handleRetry}
+            currentText={currentText}
+            isStreaming={isStreaming}
+            streamError={streamError}
+            onFollowUp={handleFollowUp}
+            onStartOver={handleStartOver}
           />
         )}
 
