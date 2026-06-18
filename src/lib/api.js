@@ -31,7 +31,10 @@ export function buildFirstMessage(saju, state) {
 
 export async function streamCatReading({ messages, onToken, onDone, onError }) {
   try {
-    const response = await fetch('/anthropic/v1/messages', {
+    const url = import.meta.env.DEV
+      ? '/anthropic/v1/messages'
+      : 'https://api.anthropic.com/v1/messages'
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'x-api-key': API_KEY,
